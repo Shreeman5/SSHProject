@@ -100,7 +100,6 @@ def get_country_chart():
         
         where_clause, params = build_filter_query(filters)
         
-        # Get top 10 countries
         cursor.execute(f"""
             SELECT country, COUNT(*) as count 
             FROM user_data 
@@ -116,10 +115,8 @@ def get_country_chart():
             conn.close()
             return jsonify({'success': True, 'data': []})
         
-        # Get time series for these countries
         country_placeholders = ','.join(['%s'] * len(top_countries))
         
-        # Add country filter to existing where clause
         if where_clause != "1=1":
             time_where = f"{where_clause} AND country IN ({country_placeholders})"
             time_params = params + top_countries
@@ -143,6 +140,109 @@ def get_country_chart():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/charts/unusual', methods=['POST'])
+def get_unusual_chart():
+    """Get countries with unusual attack rate changes"""
+    try:
+        filters = request.json or {}
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        where_clause, params = build_filter_query(filters)
+        
+        # Get daily counts for all countries
+        cursor.execute(f"""
+            SELECT date, country, COUNT(*) as count 
+            FROM user_data 
+            WHERE {where_clause} AND country IS NOT NULL AND date IS NOT NULL
+            GROUP BY date, country 
+            ORDER BY country, date
+        """, params)
+        
+        daily_data = cursor.fetchall()
+        
+        # Organize data by country
+        country_data = {}
+        for row in daily_data:
+            country = row['country']
+            if country not in country_data:
+                country_data[country] = []
+            country_data[country].append({'date': row['date'], 'count': row['count']})
+        
+        # Calculate rate of change for each country
+        rate_changes = []  # List of (country, date, rate_of_change, count)
+        
+        for country, daily_counts in country_data.items():
+            # Sort by date
+            daily_counts.sort(key=lambda x: x['date'])
+            
+            for i in range(1, len(daily_counts)):
+                prev_count = daily_counts[i-1]['count']
+                curr_count = daily_counts[i]['count']
+                curr_date = daily_counts[i]['date']
+                
+                # If previous day is 0, treat as 1
+                if prev_count == 0:
+                    prev_count = 1
+                
+                # Calculate rate of change: (n - (n-1)) / (n-1)
+                rate_of_change = (curr_count - prev_count) / prev_count
+                
+                rate_changes.append({
+                    'country': country,
+                    'date': curr_date,
+                    'rate': rate_of_change,
+                    'count': curr_count
+                })
+        
+        # Sort by rate of change (descending) and get top 10
+        rate_changes.sort(key=lambda x: x['rate'], reverse=True)
+        top_changes = rate_changes[:10]
+        
+        # Get unique countries from top changes
+        unusual_countries = list(set([change['country'] for change in top_changes]))
+        
+        # If we have fewer than 10 countries, add more
+        if len(unusual_countries) < 10:
+            # Continue down the list
+            for change in rate_changes[10:]:
+                if change['country'] not in unusual_countries:
+                    unusual_countries.append(change['country'])
+                    if len(unusual_countries) == 10:
+                        break
+        
+        # Get time series for these countries
+        if not unusual_countries:
+            cursor.close()
+            conn.close()
+            return jsonify({'success': True, 'data': []})
+        
+        country_placeholders = ','.join(['%s'] * len(unusual_countries))
+        
+        if where_clause != "1=1":
+            time_where = f"{where_clause} AND country IN ({country_placeholders})"
+            time_params = params + unusual_countries
+        else:
+            time_where = f"country IN ({country_placeholders})"
+            time_params = unusual_countries
+        
+        cursor.execute(f"""
+            SELECT date, country, COUNT(*) as count 
+            FROM user_data 
+            WHERE {time_where} AND date IS NOT NULL
+            GROUP BY date, country 
+            ORDER BY date, country
+        """, time_params)
+        
+        results = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'success': True, 'data': results})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/charts/asn', methods=['POST'])
 def get_asn_chart():
     """Get top 10 ASNs over time"""
@@ -153,7 +253,6 @@ def get_asn_chart():
         
         where_clause, params = build_filter_query(filters)
         
-        # Get top 10 ASNs
         cursor.execute(f"""
             SELECT asn_name, COUNT(*) as count 
             FROM user_data 
@@ -169,7 +268,6 @@ def get_asn_chart():
             conn.close()
             return jsonify({'success': True, 'data': []})
         
-        # Get time series for these ASNs
         asn_placeholders = ','.join(['%s'] * len(top_asns))
         
         if where_clause != "1=1":
@@ -205,7 +303,6 @@ def get_username_chart():
         
         where_clause, params = build_filter_query(filters)
         
-        # Get top 10 usernames
         cursor.execute(f"""
             SELECT username, COUNT(*) as count 
             FROM user_data 
@@ -221,7 +318,6 @@ def get_username_chart():
             conn.close()
             return jsonify({'success': True, 'data': []})
         
-        # Get time series for these usernames
         username_placeholders = ','.join(['%s'] * len(top_usernames))
         
         if where_clause != "1=1":
@@ -247,6 +343,62 @@ def get_username_chart():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/charts/ip', methods=['POST'])
+def get_ip_chart():
+    """Get top 10 IPs over time with country labels"""
+    try:
+        filters = request.json or {}
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        where_clause, params = build_filter_query(filters)
+        
+        cursor.execute(f"""
+            SELECT ip_address, 
+                   MAX(country) as country,
+                   COUNT(*) as count 
+            FROM user_data 
+            WHERE {where_clause} AND ip_address IS NOT NULL
+            GROUP BY ip_address 
+            ORDER BY count DESC 
+            LIMIT 10
+        """, params)
+        top_ips_result = cursor.fetchall()
+        
+        if not top_ips_result:
+            cursor.close()
+            conn.close()
+            return jsonify({'success': True, 'data': [], 'ip_labels': {}})
+        
+        top_ips = [row['ip_address'] for row in top_ips_result]
+        ip_labels = {row['ip_address']: f"{row['ip_address']} -- {row['country'] or 'Unknown'}" 
+                     for row in top_ips_result}
+        
+        ip_placeholders = ','.join(['%s'] * len(top_ips))
+        
+        if where_clause != "1=1":
+            time_where = f"{where_clause} AND ip_address IN ({ip_placeholders})"
+            time_params = params + top_ips
+        else:
+            time_where = f"ip_address IN ({ip_placeholders})"
+            time_params = top_ips
+        
+        cursor.execute(f"""
+            SELECT date, ip_address, COUNT(*) as count 
+            FROM user_data 
+            WHERE {time_where} AND date IS NOT NULL
+            GROUP BY date, ip_address 
+            ORDER BY date, ip_address
+        """, time_params)
+        
+        results = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'success': True, 'data': results, 'ip_labels': ip_labels})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/charts/date', methods=['POST'])
 def get_date_chart():
     """Get date distribution with country breakdown if multiple countries selected"""
@@ -257,7 +409,6 @@ def get_date_chart():
         
         where_clause, params = build_filter_query(filters)
         
-        # If multiple countries selected, break down by country
         if filters.get('countries') and len(filters['countries']) > 1:
             cursor.execute(f"""
                 SELECT date, country, COUNT(*) as count 
@@ -328,6 +479,6 @@ def get_asns_list():
 
 if __name__ == '__main__':
     os.makedirs('static', exist_ok=True)
-    print("🚀 Starting API server with time-series visualizations...")
+    print("🚀 Starting API server with anomaly detection...")
     print("📡 http://localhost:5000")
     app.run(debug=True, host='0.0.0.0', port=5000)

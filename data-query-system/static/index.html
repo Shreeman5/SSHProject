@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Analytics Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -17,18 +19,14 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f5f5;
             min-height: 100vh;
-            padding: 20px;
         }
 
         .container {
-            max-width: 1600px;
+            width: 100%;
             margin: 0 auto;
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
         }
 
         header {
@@ -154,8 +152,8 @@
         }
 
         .chart-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            display: flex;
+            flex-direction: column;
             gap: 30px;
             margin-top: 20px;
         }
@@ -165,6 +163,7 @@
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            width: 100%;
         }
 
         .chart-title {
@@ -177,7 +176,56 @@
 
         .chart-wrapper {
             position: relative;
-            height: 350px;
+            height: 400px;
+        }
+
+        .zoom-info {
+            text-align: center;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            color: #0066cc;
+            font-weight: 600;
+            font-size: 16px;
+            border: 2px solid #0066cc;
+        }
+
+        .zoom-back {
+            background: #ffc107;
+            color: #000;
+            padding: 10px 24px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .zoom-back:hover {
+            background: #ffb300;
+        }
+
+        .zoom-back:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            color: #666;
+        }
+
+        .zoom-reset {
+            background: #dc3545;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .zoom-reset:hover {
+            background: #c82333;
         }
 
         .loading-overlay {
@@ -216,11 +264,130 @@
         .select2-container--default.select2-container--focus .select2-selection--multiple {
             border-color: #667eea;
         }
+
+        /* Comparison mode grid layout */
+        .chart-grid.comparison-mode {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+        }
+
+        /* Time period badges */
+        .time-period-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        .time-period-1 {
+            background: #667eea;
+            color: white;
+        }
+
+        .time-period-2 {
+            background: #43e97b;
+            color: white;
+        }
+
+        /* Comparison Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .modal-content h2 {
+            color: #495057;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .modal-content p {
+            color: #6c757d;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn-modal-yes {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-modal-no {
+            background: #6c757d;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .exit-comparison {
+            background: #ff6b6b;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .exit-comparison:hover {
+            background: #ff5252;
+        }
     </style>
 </head>
 <body>
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Comparison Modal -->
+    <div id="comparisonModal" class="modal">
+        <div class="modal-content">
+            <h2>📊 Compare Time Periods?</h2>
+            <p>You've selected a time range. Would you like to select a second time period to compare side-by-side?</p>
+            <div class="modal-buttons">
+                <button class="btn-modal-yes" onclick="enableComparisonMode()">Yes, Compare</button>
+                <button class="btn-modal-no" onclick="closeComparisonModal()">No, Continue</button>
+            </div>
+        </div>
     </div>
 
     <div class="container">
@@ -281,47 +448,43 @@
 
         <div class="viz-section">
             <h2>📈 Attack Trends Over Time</h2>
-            <div class="chart-grid">
-                <!-- Top Left: Attacks Over Time -->
-                <div class="chart-container">
-                    <div class="chart-title">Attacks Over Time</div>
-                    <div class="chart-wrapper">
-                        <canvas id="dateChart"></canvas>
-                    </div>
-                </div>
+            
+            <div id="zoomInfo" class="zoom-info" style="display: none;">
+                ⚡ Time range selected. Other charts updated.
+                <button class="zoom-back" id="zoomBackBtn" onclick="goBackZoom()" disabled>← Go Back</button>
+                <button class="zoom-reset" onclick="resetZoom()">Reset All</button>
+                <button class="exit-comparison" id="exitComparisonBtn" onclick="exitComparisonMode()" style="display: none;">Exit Comparison</button>
+            </div>
 
-                <!-- Top Right: Top 10 Attacking Countries -->
-                <div class="chart-container">
-                    <div class="chart-title">Top 10 Attacking Countries Over Time</div>
-                    <div class="chart-wrapper">
-                        <canvas id="countryChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Bottom Left: Top 10 Usernames -->
-                <div class="chart-container">
-                    <div class="chart-title">Top 10 Usernames Over Time</div>
-                    <div class="chart-wrapper">
-                        <canvas id="usernameChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Bottom Right: Top 10 ASNs -->
-                <div class="chart-container">
-                    <div class="chart-title">Top 10 ASNs Over Time</div>
-                    <div class="chart-wrapper">
-                        <canvas id="asnChart"></canvas>
-                    </div>
-                </div>
+            <div class="chart-grid" id="chartGrid">
+                <!-- Charts will be dynamically generated here -->
             </div>
         </div>
     </div>
 
+    <script src="/static/dateChart.js"></script>
+    <script src="/static/countryChart.js"></script>
+    <script src="/static/ipChart.js"></script>
+    <script src="/static/asnChart.js"></script>
+    <script src="/static/unusualChart.js"></script>
+    <script src="/static/usernameChart.js"></script>
+
     <script>
+        // Global configuration and utilities
         const API_URL = 'http://localhost:5000/api';
         let charts = {};
         let currentFilters = {};
         let colorIndex = 0;
+        let allDates = [];
+        let zoomHistory = [];
+        let previousZoomState = null;
+        let currentFormattedDates = [];
+        let isProcessingInvalidZoom = false;
+        // Comparison mode variables
+        let comparisonMode = false;
+        let awaitingSecondBrush = false;
+        let timePeriod1 = null;
+        let timePeriod2 = null;
 
         const colorPalette = [
             '#667eea', '#764ba2', '#f093fb', '#4facfe',
@@ -335,6 +498,618 @@
             return colorPalette[colorIndex++ % colorPalette.length];
         }
 
+        function formatDate(dateStr) {
+            const year = dateStr.substring(0, 4);
+            const month = dateStr.substring(4, 6);
+            const day = dateStr.substring(6, 8);
+            
+            const date = new Date(year, parseInt(month) - 1, day);
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            return `${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+        }
+
+        function parseFormattedDate(formattedDate) {
+            const parts = formattedDate.split(' ');
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const month = String(monthNames.indexOf(parts[0]) + 1).padStart(2, '0');
+            const day = parts[1].replace(',', '').padStart(2, '0');
+            const year = parts[2];
+            return `${year}${month}${day}`;
+        }
+
+        function getCurrentZoomRange() {
+            if (zoomHistory.length > 0) {
+                return zoomHistory[zoomHistory.length - 1];
+            }
+            return null;
+        }
+
+        function goBackZoom() {
+            if (zoomHistory.length > 1) {
+                zoomHistory.pop();
+                updateZoomUI();
+                loadData();
+            }
+        }
+
+        function resetZoom() {
+            zoomHistory = [];
+            previousZoomState = null;
+            timePeriod1 = null;
+            timePeriod2 = null;
+            comparisonMode = false;
+            awaitingSecondBrush = false;
+            document.getElementById('exitComparisonBtn').style.display = 'none';
+            updateZoomUI();
+            rebuildChartLayout();
+            loadData();
+        }
+
+        function updateZoomUI() {
+            const zoomInfo = document.getElementById('zoomInfo');
+            const backBtn = document.getElementById('zoomBackBtn');
+            
+            if (zoomHistory.length > 0) {
+                zoomInfo.style.display = 'block';
+                backBtn.disabled = zoomHistory.length <= 1;
+            } else {
+                zoomInfo.style.display = 'none';
+            }
+        }
+
+        async function loadAllChartsExceptDate() {
+            $('#loadingOverlay').css('display', 'flex');
+            
+            try {
+                await Promise.all([
+                    loadStats(),
+                    loadCountryChart(),
+                    loadIpChart(),
+                    loadAsnChart(),
+                    loadUnusualChart(),
+                    loadUsernameChart()
+                ]);
+            } finally {
+                $('#loadingOverlay').hide();
+            }
+        }
+
+        function showComparisonModal() {
+            document.getElementById('comparisonModal').style.display = 'flex';
+        }
+
+        function closeComparisonModal() {
+            document.getElementById('comparisonModal').style.display = 'none';
+            awaitingSecondBrush = false;
+        }
+
+        function enableComparisonMode() {
+            closeComparisonModal();
+            awaitingSecondBrush = true;
+            
+            // Temporarily clear zoom history to reload date chart with full range
+            const tempZoomHistory = [...zoomHistory];
+            zoomHistory = [];
+            
+            // Reload ONLY the date chart with full date range
+            loadDateChart().then(() => {
+                // Restore zoom history after date chart loads
+                zoomHistory = tempZoomHistory;
+            });
+            
+            alert('Now brush on the date chart to select the second time period for comparison.');
+        }
+
+        function exitComparisonMode() {
+            comparisonMode = false;
+            awaitingSecondBrush = false;
+            timePeriod1 = null;
+            timePeriod2 = null;
+            zoomHistory = [];
+            document.getElementById('exitComparisonBtn').style.display = 'none';
+            rebuildChartLayout();
+            loadData();
+        }
+
+        function rebuildChartLayout() {
+            const chartGrid = document.getElementById('chartGrid');
+            
+            if (comparisonMode && timePeriod1 && timePeriod2) {
+                chartGrid.className = 'chart-grid comparison-mode';
+                chartGrid.innerHTML = `
+                    <!-- Row 1: Date Charts -->
+                    <div class="chart-container">
+                        <div class="chart-title">Attacks Over Time <span class="time-period-badge time-period-1">Period 1: ${formatDate(timePeriod1.from)} - ${formatDate(timePeriod1.to)}</span></div>
+                        <div class="chart-wrapper">
+                            <canvas id="dateChart1"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">Attacks Over Time <span class="time-period-badge time-period-2">Period 2: ${formatDate(timePeriod2.from)} - ${formatDate(timePeriod2.to)}</span></div>
+                        <div class="chart-wrapper">
+                            <canvas id="dateChart2"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Country Charts -->
+                    <div class="chart-container">
+                        <div class="chart-title">Top 10 Attacking Countries <span class="time-period-badge time-period-1">Period 1</span></div>
+                        <div class="chart-wrapper">
+                            <canvas id="countryChart1"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">Top 10 Attacking Countries <span class="time-period-badge time-period-2">Period 2</span></div>
+                        <div class="chart-wrapper">
+                            <canvas id="countryChart2"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Unusual Charts -->
+                    <div class="chart-container">
+                        <div class="chart-title">Unusual Changes <span class="time-period-badge time-period-1">Period 1</span></div>
+                        <div class="chart-wrapper">
+                            <canvas id="unusualChart1"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">Unusual Changes <span class="time-period-badge time-period-2">Period 2</span></div>
+                        <div class="chart-wrapper">
+                            <canvas id="unusualChart2"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Row 4: IP Charts -->
+                    <div class="chart-container">
+                        <div class="chart-title">Top 10 IPs <span class="time-period-badge time-period-1">Period 1</span></div>
+                        <div class="chart-wrapper">
+                            <canvas id="ipChart1"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">Top 10 IPs <span class="time-period-badge time-period-2">Period 2</span></div>
+                        <div class="chart-wrapper">
+                            <canvas id="ipChart2"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Row 5: ASN Charts -->
+                    <div class="chart-container">
+                        <div class="chart-title">Top 10 ASNs <span class="time-period-badge time-period-1">Period 1</span></div>
+                        <div class="chart-wrapper">
+                            <canvas id="asnChart1"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">Top 10 ASNs <span class="time-period-badge time-period-2">Period 2</span></div>
+                        <div class="chart-wrapper">
+                            <canvas id="asnChart2"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Row 6: Username Charts -->
+                    <div class="chart-container">
+                        <div class="chart-title">Top 10 Usernames <span class="time-period-badge time-period-1">Period 1</span></div>
+                        <div class="chart-wrapper">
+                            <canvas id="usernameChart1"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">Top 10 Usernames <span class="time-period-badge time-period-2">Period 2</span></div>
+                        <div class="chart-wrapper">
+                            <canvas id="usernameChart2"></canvas>
+                        </div>
+                    </div>
+                `;
+            } else {
+                chartGrid.className = 'chart-grid';
+                chartGrid.innerHTML = `
+                    <div class="chart-container">
+                        <div class="chart-title">Attacks Over Time (Drag to zoom - minimum 2 days)</div>
+                        <div class="chart-wrapper">
+                            <canvas id="dateChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">Top 10 Attacking Countries Over Time</div>
+                        <div class="chart-wrapper">
+                            <canvas id="countryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">Unusual Changes in Country Attacks Over Time</div>
+                        <div class="chart-wrapper">
+                            <canvas id="unusualChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">Top 10 IPs Over Time</div>
+                        <div class="chart-wrapper">
+                            <canvas id="ipChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">Top 10 ASNs Over Time</div>
+                        <div class="chart-wrapper">
+                            <canvas id="asnChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">Top 10 Usernames Over Time</div>
+                        <div class="chart-wrapper">
+                            <canvas id="usernameChart"></canvas>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function handleZoomComplete(fromDate, toDate) {
+            if (!comparisonMode && !awaitingSecondBrush && zoomHistory.length === 0) {
+                // First brush - store it, update charts, and ask user
+                timePeriod1 = { from: fromDate, to: toDate };
+                zoomHistory.push(timePeriod1);
+                updateZoomUI();
+                loadAllChartsExceptDate();
+                showComparisonModal();
+            } else if (awaitingSecondBrush) {
+                // Second brush - enter comparison mode
+                timePeriod2 = { from: fromDate, to: toDate };
+                comparisonMode = true;
+                awaitingSecondBrush = false;
+                document.getElementById('exitComparisonBtn').style.display = 'inline-block';
+                rebuildChartLayout();
+                loadComparisonData();
+            } else if (!comparisonMode) {
+                // Normal zoom behavior (not in comparison)
+                zoomHistory.push({ from: fromDate, to: toDate });
+                updateZoomUI();
+                loadAllChartsExceptDate();
+            }
+        }
+
+        async function loadComparisonData() {
+            $('#loadingOverlay').css('display', 'flex');
+            
+            try {
+                colorIndex = 0;
+                
+                // Load Period 1 charts
+                await loadDateChartComparison('dateChart1', timePeriod1);
+                await loadCountryChartComparison('countryChart1', timePeriod1);
+                await loadUnusualChartComparison('unusualChart1', timePeriod1);
+                await loadIpChartComparison('ipChart1', timePeriod1);
+                await loadAsnChartComparison('asnChart1', timePeriod1);
+                await loadUsernameChartComparison('usernameChart1', timePeriod1);
+                
+                colorIndex = 0;
+                
+                // Load Period 2 charts
+                await loadDateChartComparison('dateChart2', timePeriod2);
+                await loadCountryChartComparison('countryChart2', timePeriod2);
+                await loadUnusualChartComparison('unusualChart2', timePeriod2);
+                await loadIpChartComparison('ipChart2', timePeriod2);
+                await loadAsnChartComparison('asnChart2', timePeriod2);
+                await loadUsernameChartComparison('usernameChart2', timePeriod2);
+            } finally {
+                $('#loadingOverlay').hide();
+            }
+        }
+
+        async function loadDateChartComparison(canvasId, timePeriod) {
+            const filters = { ...currentFilters, date_from: timePeriod.from, date_to: timePeriod.to };
+            const response = await fetch(`${API_URL}/charts/date`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(filters)
+            });
+            const result = await response.json();
+            if (!result.success) return;
+
+            if (charts[canvasId]) charts[canvasId].destroy();
+
+            const dates = result.data.map(x => x.date);
+            const formattedDates = dates.map(d => formatDate(d));
+            const values = result.data.map(x => x.count);
+
+            const ctx = document.getElementById(canvasId);
+            charts[canvasId] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: formattedDates,
+                    datasets: [{
+                        label: 'Attacks',
+                        data: values,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { 
+                        y: { beginAtZero: true },
+                        x: {}
+                    }
+                }
+            });
+        }
+
+        async function loadCountryChartComparison(canvasId, timePeriod) {
+            const filters = { ...currentFilters, date_from: timePeriod.from, date_to: timePeriod.to };
+            const response = await fetch(`${API_URL}/charts/country`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(filters)
+            });
+            const result = await response.json();
+            if (!result.success || result.data.length === 0) return;
+
+            if (charts[canvasId]) charts[canvasId].destroy();
+
+            const dateMap = {};
+            const countries = new Set();
+            result.data.forEach(row => {
+                countries.add(row.country);
+                if (!dateMap[row.date]) dateMap[row.date] = {};
+                dateMap[row.date][row.country] = row.count;
+            });
+
+            const dates = Object.keys(dateMap).sort();
+            const formattedDates = dates.map(d => formatDate(d));
+            
+            const countryTotals = {};
+            countries.forEach(country => {
+                countryTotals[country] = dates.reduce((sum, date) => sum + (dateMap[date][country] || 0), 0);
+            });
+            
+            const sortedCountries = Array.from(countries).sort((a, b) => countryTotals[b] - countryTotals[a]);
+            
+            const datasets = sortedCountries.map(country => {
+                const color = getNextColor();
+                return {
+                    label: country,
+                    data: dates.map(date => dateMap[date][country] || 0),
+                    borderColor: color,
+                    backgroundColor: color + '33',
+                    fill: false,
+                    tension: 0.4
+                };
+            });
+
+            const ctx = document.getElementById(canvasId);
+            charts[canvasId] = new Chart(ctx, {
+                type: 'line',
+                data: { labels: formattedDates, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true }, x: {} }
+                }
+            });
+        }
+
+        async function loadUnusualChartComparison(canvasId, timePeriod) {
+            const filters = { ...currentFilters, date_from: timePeriod.from, date_to: timePeriod.to };
+            const response = await fetch(`${API_URL}/charts/unusual`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(filters)
+            });
+            const result = await response.json();
+            if (!result.success || result.data.length === 0) return;
+
+            if (charts[canvasId]) charts[canvasId].destroy();
+
+            const dateMap = {};
+            const countries = new Set();
+            result.data.forEach(row => {
+                countries.add(row.country);
+                if (!dateMap[row.date]) dateMap[row.date] = {};
+                dateMap[row.date][row.country] = row.count;
+            });
+
+            const dates = Object.keys(dateMap).sort();
+            const formattedDates = dates.map(d => formatDate(d));
+            
+            const countryTotals = {};
+            countries.forEach(country => {
+                countryTotals[country] = dates.reduce((sum, date) => sum + (dateMap[date][country] || 0), 0);
+            });
+            
+            const sortedCountries = Array.from(countries).sort((a, b) => countryTotals[b] - countryTotals[a]);
+            
+            const datasets = sortedCountries.map(country => {
+                const color = getNextColor();
+                return {
+                    label: country,
+                    data: dates.map(date => dateMap[date][country] || 0),
+                    borderColor: color,
+                    backgroundColor: color + '33',
+                    fill: false,
+                    tension: 0.4
+                };
+            });
+
+            const ctx = document.getElementById(canvasId);
+            charts[canvasId] = new Chart(ctx, {
+                type: 'line',
+                data: { labels: formattedDates, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true }, x: {} }
+                }
+            });
+        }
+
+        async function loadIpChartComparison(canvasId, timePeriod) {
+            const filters = { ...currentFilters, date_from: timePeriod.from, date_to: timePeriod.to };
+            const response = await fetch(`${API_URL}/charts/ip`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(filters)
+            });
+            const result = await response.json();
+            if (!result.success || result.data.length === 0) return;
+
+            if (charts[canvasId]) charts[canvasId].destroy();
+
+            const dateMap = {};
+            const ips = new Set();
+            result.data.forEach(row => {
+                ips.add(row.ip_address);
+                if (!dateMap[row.date]) dateMap[row.date] = {};
+                dateMap[row.date][row.ip_address] = row.count;
+            });
+
+            const dates = Object.keys(dateMap).sort();
+            const formattedDates = dates.map(d => formatDate(d));
+            
+            const ipTotals = {};
+            ips.forEach(ip => {
+                ipTotals[ip] = dates.reduce((sum, date) => sum + (dateMap[date][ip] || 0), 0);
+            });
+            
+            const sortedIps = Array.from(ips).sort((a, b) => ipTotals[b] - ipTotals[a]);
+            
+            const datasets = sortedIps.map(ip => {
+                const color = getNextColor();
+                return {
+                    label: result.ip_labels[ip] || ip,
+                    data: dates.map(date => dateMap[date][ip] || 0),
+                    borderColor: color,
+                    backgroundColor: color + '33',
+                    fill: false,
+                    tension: 0.4
+                };
+            });
+
+            const ctx = document.getElementById(canvasId);
+            charts[canvasId] = new Chart(ctx, {
+                type: 'line',
+                data: { labels: formattedDates, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true }, x: {} }
+                }
+            });
+        }
+
+        async function loadAsnChartComparison(canvasId, timePeriod) {
+            const filters = { ...currentFilters, date_from: timePeriod.from, date_to: timePeriod.to };
+            const response = await fetch(`${API_URL}/charts/asn`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(filters)
+            });
+            const result = await response.json();
+            if (!result.success || result.data.length === 0) return;
+
+            if (charts[canvasId]) charts[canvasId].destroy();
+
+            const dateMap = {};
+            const asns = new Set();
+            result.data.forEach(row => {
+                asns.add(row.asn_name);
+                if (!dateMap[row.date]) dateMap[row.date] = {};
+                dateMap[row.date][row.asn_name] = row.count;
+            });
+
+            const dates = Object.keys(dateMap).sort();
+            const formattedDates = dates.map(d => formatDate(d));
+            
+            const asnTotals = {};
+            asns.forEach(asn => {
+                asnTotals[asn] = dates.reduce((sum, date) => sum + (dateMap[date][asn] || 0), 0);
+            });
+            
+            const sortedAsns = Array.from(asns).sort((a, b) => asnTotals[b] - asnTotals[a]);
+            
+            const datasets = sortedAsns.map(asn => {
+                const color = getNextColor();
+                return {
+                    label: asn,
+                    data: dates.map(date => dateMap[date][asn] || 0),
+                    borderColor: color,
+                    backgroundColor: color + '33',
+                    fill: false,
+                    tension: 0.4
+                };
+            });
+
+            const ctx = document.getElementById(canvasId);
+            charts[canvasId] = new Chart(ctx, {
+                type: 'line',
+                data: { labels: formattedDates, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true }, x: {} }
+                }
+            });
+        }
+
+        async function loadUsernameChartComparison(canvasId, timePeriod) {
+            const filters = { ...currentFilters, date_from: timePeriod.from, date_to: timePeriod.to };
+            const response = await fetch(`${API_URL}/charts/username`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(filters)
+            });
+            const result = await response.json();
+            if (!result.success || result.data.length === 0) return;
+
+            if (charts[canvasId]) charts[canvasId].destroy();
+
+            const dateMap = {};
+            const usernames = new Set();
+            result.data.forEach(row => {
+                usernames.add(row.username);
+                if (!dateMap[row.date]) dateMap[row.date] = {};
+                dateMap[row.date][row.username] = row.count;
+            });
+
+            const dates = Object.keys(dateMap).sort();
+            const formattedDates = dates.map(d => formatDate(d));
+            
+            const usernameTotals = {};
+            usernames.forEach(username => {
+                usernameTotals[username] = dates.reduce((sum, date) => sum + (dateMap[date][username] || 0), 0);
+            });
+            
+            const sortedUsernames = Array.from(usernames).sort((a, b) => usernameTotals[b] - usernameTotals[a]);
+            
+            const datasets = sortedUsernames.map(username => {
+                const color = getNextColor();
+                return {
+                    label: username,
+                    data: dates.map(date => dateMap[date][username] || 0),
+                    borderColor: color,
+                    backgroundColor: color + '33',
+                    fill: false,
+                    tension: 0.4
+                };
+            });
+
+            const ctx = document.getElementById(canvasId);
+            charts[canvasId] = new Chart(ctx, {
+                type: 'line',
+                data: { labels: formattedDates, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true }, x: {} }
+                }
+            });
+        }
+
         $(document).ready(function() {
             $('.multi-select').select2({
                 placeholder: 'Select options...',
@@ -343,6 +1118,7 @@
             });
 
             loadFilterOptions();
+            rebuildChartLayout();
             loadData();
         });
 
@@ -385,11 +1161,17 @@
             const asns = $('#asnsFilter').val();
             if (asns && asns.length > 0) filters.asns = asns;
             
-            const dateFrom = $('#dateFrom').val();
-            if (dateFrom) filters.date_from = dateFrom;
-            
-            const dateTo = $('#dateTo').val();
-            if (dateTo) filters.date_to = dateTo;
+            const currentZoom = getCurrentZoomRange();
+            if (currentZoom) {
+                filters.date_from = currentZoom.from;
+                filters.date_to = currentZoom.to;
+            } else {
+                const dateFrom = $('#dateFrom').val();
+                if (dateFrom) filters.date_from = dateFrom;
+                
+                const dateTo = $('#dateTo').val();
+                if (dateTo) filters.date_to = dateTo;
+            }
             
             return filters;
         }
@@ -397,6 +1179,15 @@
         async function applyFilters() {
             currentFilters = getFilters();
             colorIndex = 0;
+            zoomHistory = [];
+            previousZoomState = null;
+            timePeriod1 = null;
+            timePeriod2 = null;
+            comparisonMode = false;
+            awaitingSecondBrush = false;
+            document.getElementById('exitComparisonBtn').style.display = 'none';
+            updateZoomUI();
+            rebuildChartLayout();
             await loadData();
         }
 
@@ -408,6 +1199,15 @@
             $('#dateTo').val('');
             currentFilters = {};
             colorIndex = 0;
+            zoomHistory = [];
+            previousZoomState = null;
+            timePeriod1 = null;
+            timePeriod2 = null;
+            comparisonMode = false;
+            awaitingSecondBrush = false;
+            document.getElementById('exitComparisonBtn').style.display = 'none';
+            updateZoomUI();
+            rebuildChartLayout();
             loadData();
         }
 
@@ -419,8 +1219,10 @@
                     loadStats(),
                     loadDateChart(),
                     loadCountryChart(),
-                    loadUsernameChart(),
-                    loadAsnChart()
+                    loadIpChart(),
+                    loadAsnChart(),
+                    loadUnusualChart(),
+                    loadUsernameChart()
                 ]);
             } finally {
                 $('#loadingOverlay').hide();
@@ -429,10 +1231,11 @@
 
         async function loadStats() {
             try {
+                const filters = getFilters();
                 const response = await fetch(`${API_URL}/stats`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(currentFilters)
+                    body: JSON.stringify(filters)
                 });
                 const data = await response.json();
                 
@@ -443,232 +1246,6 @@
                 }
             } catch (error) {
                 console.error('Error loading stats:', error);
-            }
-        }
-
-        async function loadDateChart() {
-            try {
-                const response = await fetch(`${API_URL}/charts/date`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(currentFilters)
-                });
-                const result = await response.json();
-                
-                if (!result.success) return;
-
-                if (charts.dateChart) charts.dateChart.destroy();
-
-                const multipleCountries = currentFilters.countries && currentFilters.countries.length > 1;
-
-                if (multipleCountries) {
-                    const dateMap = {};
-                    result.data.forEach(row => {
-                        if (!dateMap[row.date]) dateMap[row.date] = {};
-                        dateMap[row.date][row.country] = row.count;
-                    });
-
-                    const dates = Object.keys(dateMap).sort();
-                    const datasets = currentFilters.countries.map(country => {
-                        const color = getNextColor();
-                        return {
-                            label: country,
-                            data: dates.map(date => dateMap[date][country] || 0),
-                            borderColor: color,
-                            backgroundColor: color + '33',
-                            fill: false,
-                            tension: 0.4
-                        };
-                    });
-
-                    const ctx = document.getElementById('dateChart');
-                    charts.dateChart = new Chart(ctx, {
-                        type: 'line',
-                        data: { labels: dates, datasets: datasets },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: { y: { beginAtZero: true } }
-                        }
-                    });
-                } else {
-                    const labels = result.data.map(x => x.date);
-                    const values = result.data.map(x => x.count);
-
-                    const ctx = document.getElementById('dateChart');
-                    charts.dateChart = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Attacks',
-                                data: values,
-                                borderColor: '#667eea',
-                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                                fill: true,
-                                tension: 0.4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: { y: { beginAtZero: true } }
-                        }
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading date chart:', error);
-            }
-        }
-
-        async function loadCountryChart() {
-            try {
-                const response = await fetch(`${API_URL}/charts/country`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(currentFilters)
-                });
-                const result = await response.json();
-                
-                if (!result.success || result.data.length === 0) return;
-
-                if (charts.countryChart) charts.countryChart.destroy();
-
-                // Group by date and country
-                const dateMap = {};
-                const countries = new Set();
-                
-                result.data.forEach(row => {
-                    countries.add(row.country);
-                    if (!dateMap[row.date]) dateMap[row.date] = {};
-                    dateMap[row.date][row.country] = row.count;
-                });
-
-                const dates = Object.keys(dateMap).sort();
-                const datasets = Array.from(countries).map(country => {
-                    const color = getNextColor();
-                    return {
-                        label: country,
-                        data: dates.map(date => dateMap[date][country] || 0),
-                        borderColor: color,
-                        backgroundColor: color + '33',
-                        fill: false,
-                        tension: 0.4
-                    };
-                });
-
-                const ctx = document.getElementById('countryChart');
-                charts.countryChart = new Chart(ctx, {
-                    type: 'line',
-                    data: { labels: dates, datasets: datasets },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: { y: { beginAtZero: true } }
-                    }
-                });
-            } catch (error) {
-                console.error('Error loading country chart:', error);
-            }
-        }
-
-        async function loadUsernameChart() {
-            try {
-                const response = await fetch(`${API_URL}/charts/username`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(currentFilters)
-                });
-                const result = await response.json();
-                
-                if (!result.success || result.data.length === 0) return;
-
-                if (charts.usernameChart) charts.usernameChart.destroy();
-
-                const dateMap = {};
-                const usernames = new Set();
-                
-                result.data.forEach(row => {
-                    usernames.add(row.username);
-                    if (!dateMap[row.date]) dateMap[row.date] = {};
-                    dateMap[row.date][row.username] = row.count;
-                });
-
-                const dates = Object.keys(dateMap).sort();
-                const datasets = Array.from(usernames).map(username => {
-                    const color = getNextColor();
-                    return {
-                        label: username,
-                        data: dates.map(date => dateMap[date][username] || 0),
-                        borderColor: color,
-                        backgroundColor: color + '33',
-                        fill: false,
-                        tension: 0.4
-                    };
-                });
-
-                const ctx = document.getElementById('usernameChart');
-                charts.usernameChart = new Chart(ctx, {
-                    type: 'line',
-                    data: { labels: dates, datasets: datasets },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: { y: { beginAtZero: true } }
-                    }
-                });
-            } catch (error) {
-                console.error('Error loading username chart:', error);
-            }
-        }
-
-        async function loadAsnChart() {
-            try {
-                const response = await fetch(`${API_URL}/charts/asn`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(currentFilters)
-                });
-                const result = await response.json();
-                
-                if (!result.success || result.data.length === 0) return;
-
-                if (charts.asnChart) charts.asnChart.destroy();
-
-                const dateMap = {};
-                const asns = new Set();
-                
-                result.data.forEach(row => {
-                    asns.add(row.asn_name);
-                    if (!dateMap[row.date]) dateMap[row.date] = {};
-                    dateMap[row.date][row.asn_name] = row.count;
-                });
-
-                const dates = Object.keys(dateMap).sort();
-                const datasets = Array.from(asns).map(asn => {
-                    const color = getNextColor();
-                    return {
-                        label: asn,
-                        data: dates.map(date => dateMap[date][asn] || 0),
-                        borderColor: color,
-                        backgroundColor: color + '33',
-                        fill: false,
-                        tension: 0.4
-                    };
-                });
-
-                const ctx = document.getElementById('asnChart');
-                charts.asnChart = new Chart(ctx, {
-                    type: 'line',
-                    data: { labels: dates, datasets: datasets },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: { y: { beginAtZero: true } }
-                    }
-                });
-            } catch (error) {
-                console.error('Error loading ASN chart:', error);
             }
         }
     </script>
