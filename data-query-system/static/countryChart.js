@@ -1,4 +1,5 @@
-// countryChart.js - Handles the top 10 attacking countries chart
+// countryChart.js - Handles the top 10 attacking countries chart with double-click selection
+console.log("✅ countrychart.js LOADED");
 
 async function loadCountryChart() {
     try {
@@ -68,7 +69,54 @@ async function loadCountryChart() {
                             font: { size: 14, weight: 'bold' }
                         }
                     }
+                },
+                plugins: {
+                    legend: {
+                        onClick: function(e, legendItem, legend) {
+                            // Default behavior on single click - toggle visibility
+                            const index = legendItem.datasetIndex;
+                            const ci = legend.chart;
+                            if (ci.isDatasetVisible(index)) {
+                                ci.hide(index);
+                                legendItem.hidden = true;
+                            } else {
+                                ci.show(index);
+                                legendItem.hidden = false;
+                            }
+                        }
+                    }
+                },
+                onHover: (event, activeElements, chart) => {
+                    event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
                 }
+            }
+        });
+
+        // Add right-click handler to canvas for country selection
+        const canvas = document.getElementById('countryChart');
+        canvas.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            
+            const chart = charts.countryChart;
+            if (!chart) return;
+            
+            const points = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false);
+            
+            // Check if clicked on legend
+            const legend = chart.legend;
+            if (legend) {
+                const x = e.offsetX;
+                const y = e.offsetY;
+                
+                legend.legendItems.forEach((item, index) => {
+                    const hitBox = legend.legendHitBoxes[index];
+                    if (hitBox && 
+                        x >= hitBox.left && x <= hitBox.left + hitBox.width &&
+                        y >= hitBox.top && y <= hitBox.top + hitBox.height) {
+                        // Right-clicked on a legend item
+                        handleCountrySelection(item.text);
+                    }
+                });
             }
         });
     } catch (error) {

@@ -1,4 +1,5 @@
 // dateChart.js - Handles the main date/time chart with zoom capabilities
+console.log("✅ datechart.js LOADED");
 
 async function loadDateChart() {
     try {

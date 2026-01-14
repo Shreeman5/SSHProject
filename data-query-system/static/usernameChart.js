@@ -1,4 +1,5 @@
-// usernameChart.js - Handles the top 10 usernames chart
+// usernameChart.js - Handles the top 10 usernames chart with right-click selection
+console.log("✅ usernamechart.js LOADED");
 
 async function loadUsernameChart() {
     try {
@@ -68,7 +69,52 @@ async function loadUsernameChart() {
                             font: { size: 14, weight: 'bold' }
                         }
                     }
+                },
+                plugins: {
+                    legend: {
+                        onClick: function(e, legendItem, legend) {
+                            // Default behavior on single click - toggle visibility
+                            const index = legendItem.datasetIndex;
+                            const ci = legend.chart;
+                            if (ci.isDatasetVisible(index)) {
+                                ci.hide(index);
+                                legendItem.hidden = true;
+                            } else {
+                                ci.show(index);
+                                legendItem.hidden = false;
+                            }
+                        }
+                    }
+                },
+                onHover: (event, activeElements, chart) => {
+                    event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
                 }
+            }
+        });
+
+        // Add right-click handler to canvas for username selection
+        const canvas = document.getElementById('usernameChart');
+        canvas.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            
+            const chart = charts.usernameChart;
+            if (!chart) return;
+            
+            // Check if clicked on legend
+            const legend = chart.legend;
+            if (legend) {
+                const x = e.offsetX;
+                const y = e.offsetY;
+                
+                legend.legendItems.forEach((item, index) => {
+                    const hitBox = legend.legendHitBoxes[index];
+                    if (hitBox && 
+                        x >= hitBox.left && x <= hitBox.left + hitBox.width &&
+                        y >= hitBox.top && y <= hitBox.top + hitBox.height) {
+                        // Right-clicked on a legend item
+                        handleUsernameSelection(item.text);
+                    }
+                });
             }
         });
     } catch (error) {
